@@ -7,12 +7,12 @@ declare module ReactRedux {
 	
 	export class Provider extends React.Component<{store:IStore<any>},{}>{}	
 
-	export interface IMapStateToProps {
-		(state: any, ownProps?: any): Object;
+	export interface IMapStateToProps<State, OwnProps, OutProps> {
+		(state: State, ownProps?: OwnProps): OutProps;
 	}
 
-	export interface IMapDispatchToProps {
-		(dispatch: IDispatch, ownProps?: any): Object;
+	export interface IMapDispatchToProps<OwnProps, Dispatchers> {
+		(dispatch: IDispatch, ownProps?: OwnProps): Dispatchers;
 	}
 
 	export interface IConnectOptions {
@@ -20,18 +20,29 @@ declare module ReactRedux {
 		withRef?: boolean;
 	}
 
-	type ComponentConstructor<P> = React.ComponentClass<P> | React.StatelessComponent<P>
+	export type ComponentNoState<Props> = React.StatelessComponent<Props> | React.Component<Props, {}>
 
-	function wrapWithConnect<T extends ComponentConstructor<any>>(
-		component: T
-	): T
-
-	export function connect(
-		mapStateToProps?: IMapStateToProps,
-		mapDispatchToProps?: IMapDispatchToProps,
-		mergeProps?: (stateProps: Object, dispatchProps: Object, ownProps: Object) => Object,
+	export function connect<State, OwnProps, OtherProps, T, U>(
+		mapStateToProps: IMapStateToProps<State, OwnProps, T>,
+		mapDispatchToProps: IMapDispatchToProps<OwnProps, U>,
+		mergeProps: (fromStateMap: T, fromDispatchProps: U, props: OwnProps) => OtherProps,
 		options?: IConnectOptions
-	): typeof wrapWithConnect;
+	): (wrappedComponent: ComponentNoState<OtherProps>)
+	=> new() => React.Component<OwnProps & {store: IStore<State>}, IStore<State>>
+
+	export function connect<State, OwnProps, OtherValueProps, OtherCallbackProps>(
+		mapStateToProps: IMapStateToProps<State, OwnProps, OtherValueProps>,
+		mapDispatchToProps: IMapDispatchToProps<OwnProps, OtherCallbackProps>
+	): (wrappedComponent: ComponentNoState<OtherValueProps & OtherCallbackProps>)
+	=> new() => React.Component<OwnProps & {store: IStore<State>}, IStore<State>>
+
+	export function connect<State, OwnProps, OtherValueProps>(
+		mapStateToProps: IMapStateToProps<State, OwnProps, OtherValueProps>
+	): (wrappedComponent: ComponentNoState<OtherValueProps>)
+		=> new() => React.Component<OwnProps & {store: IStore<State>}, IStore<State>>
+
+	export function connect<State, OwnProps>(): (wrappedComponent: ComponentNoState<OwnProps>)
+		=> new() => React.Component<OwnProps & {store: IStore<State>}, IStore<State>>
 }
 
 export = ReactRedux;
